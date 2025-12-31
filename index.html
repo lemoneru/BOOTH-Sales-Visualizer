@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOTH Sales Visualizer v38</title>
+    <title>BOOTH Sales Visualizer v40</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -332,8 +332,8 @@
                                 <transition name="table-slide">
                                     <div v-show="showStatsTables" class="overflow-x-auto max-h-[300px] border-t border-gray-200">
                                         <table class="min-w-full text-xs text-left bg-white">
-                                            <thead class="bg-gray-50 text-gray-500 sticky top-0"><tr><th class="px-4 py-2 w-10 text-center">#</th><th class="px-4 py-2">バリエーション名</th><th class="px-4 py-2 text-right">値</th><th class="px-4 py-2 w-16">比率</th></tr></thead>
-                                            <tbody class="divide-y"><tr v-for="(item, i) in variationStats" :key="i" class="hover:bg-gray-50"><td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td><td class="px-4 py-2 font-medium text-gray-800">{{ item.name || '(指定なし)' }}</td><td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td><td class="px-4 py-2">{{ item.percent }}%</td></tr><tr v-if="variationStats.length === 0"><td colspan="4" class="text-center py-4 text-gray-400">データなし</td></tr></tbody>
+                                            <thead class="bg-gray-50 text-gray-500 sticky top-0"><tr><th class="px-4 py-2 w-10 text-center">#</th><th class="px-4 py-2">商品名</th><th class="px-4 py-2">バリエーション名</th><th class="px-4 py-2 text-right">値</th><th class="px-4 py-2 w-16">比率</th></tr></thead>
+                                            <tbody class="divide-y"><tr v-for="(item, i) in variationStats" :key="i" class="hover:bg-gray-50"><td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td><td class="px-4 py-2 font-medium text-gray-600 truncate max-w-[150px]" :title="item.product">{{ item.product }}</td><td class="px-4 py-2 font-medium text-gray-800">{{ item.name || '(指定なし)' }}</td><td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td><td class="px-4 py-2">{{ item.percent }}%</td></tr><tr v-if="variationStats.length === 0"><td colspan="5" class="text-center py-4 text-gray-400">データなし</td></tr></tbody>
                                         </table>
                                     </div>
                                 </transition>
@@ -574,7 +574,6 @@
                     return map;
                 });
 
-                // 時間帯別の計算
                 const hourlyAnalysis = computed(() => {
                     const data = filteredData.value;
                     const stats = new Array(24).fill(0);
@@ -601,14 +600,11 @@
                         value: val,
                         percent: grandTotal ? Math.round((val / grandTotal) * 1000) / 10 : 0
                     }));
-                    
-                    // リストは比率順にソートする (Requirement: "Order by descending ratio")
                     list.sort((a, b) => b.value - a.value);
 
                     return { stats, list };
                 });
 
-                // 曜日別の計算
                 const dowAnalysis = computed(() => {
                     const data = filteredData.value;
                     const stats = new Array(7).fill(0);
@@ -636,8 +632,6 @@
                         value: val,
                         percent: grandTotal ? Math.round((val / grandTotal) * 1000) / 10 : 0
                     }));
-
-                    // リストは比率順にソートする
                     list.sort((a, b) => b.value - a.value);
 
                     return { stats, list };
@@ -669,14 +663,32 @@
                     return { revenue, count, avgPrice: count ? Math.floor(revenue / count) : 0 };
                 });
 
+                // バリエーションの集計ロジックを修正：(商品名 + バリエーション名) で集計するように変更
                 const variationStats = computed(() => {
                     const map = {}; const data = filteredData.value; let grandTotal = 0;
                     data.forEach(d => {
-                        const key = d.variation || '(指定なし)';
+                        // キーを商品名込みにする
+                        const vName = d.variation || '(指定なし)';
+                        const key = d.product + '___' + vName; // 一意なキー
                         const val = currentMetric.value === 'amount' ? d.amount : d.quantity;
-                        if (!map[key]) map[key] = 0; map[key] += val; grandTotal += val;
+                        
+                        if (!map[key]) {
+                            map[key] = { 
+                                product: d.product, 
+                                name: vName, // 短い名前（グラフ用）
+                                value: 0 
+                            };
+                        }
+                        map[key].value += val;
+                        grandTotal += val;
                     });
-                    return Object.entries(map).map(([name, value]) => ({ name, value, percent: grandTotal ? Math.round((value / grandTotal) * 100) : 0 })).sort((a, b) => b.value - a.value);
+                    
+                    return Object.values(map).map(item => ({
+                        product: item.product,
+                        name: item.name, 
+                        value: item.value,
+                        percent: grandTotal ? Math.round((item.value / grandTotal) * 100) : 0
+                    })).sort((a, b) => b.value - a.value);
                 });
 
                 const productStats = computed(() => {
@@ -868,11 +880,27 @@
 
                 const drawStatsCharts = () => {
                     if (rawData.value.length === 0) return;
-                    const pieOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: (c) => `${c.label}: ${hideAmount.value ? '***' : (currentMetric.value === 'quantity' ? c.parsed + '個' : '¥'+c.parsed.toLocaleString())}` } } } };
+                    const pieOpts = { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { 
+                            legend: { position: 'right' }, 
+                            tooltip: { 
+                                callbacks: { 
+                                    label: (c) => {
+                                        const statItem = variationStats.value[c.dataIndex]; // Get item for specific tooltip
+                                        const valStr = hideAmount.value ? '***' : (currentMetric.value === 'quantity' ? c.parsed + '個' : '¥'+c.parsed.toLocaleString());
+                                        return `${statItem.product} : ${statItem.name}  ${valStr}`;
+                                    }
+                                } 
+                            } 
+                        } 
+                    };
                     const varCanvas = document.getElementById('variationChart');
                     if (varCanvas) {
                         const stats = variationStats.value.slice(0, 10);
                         if(chartInstances['variation']) chartInstances['variation'].destroy();
+                        // Labels are now only variation name
                         chartInstances['variation'] = new Chart(varCanvas.getContext('2d'), { type: 'doughnut', data: { labels: stats.map(s => s.name), datasets: [{ data: stats.map(s => s.value), backgroundColor: colors }] }, options: pieOpts });
                     }
                     const prodCanvas = document.getElementById('productShareChart');
