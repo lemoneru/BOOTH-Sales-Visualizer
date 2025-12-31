@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOTH Sales Visualizer v35</title>
+    <title>BOOTH Sales Visualizer v37</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -15,6 +15,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .slide-enter-active, .slide-leave-active { transition: all 0.2s ease; max-height: 500px; opacity: 1; overflow: hidden; }
         .slide-enter-from, .slide-leave-to { max-height: 0; opacity: 0; }
+        /* テーブル開閉アニメーション用 */
+        .table-slide-enter-active, .table-slide-leave-active { transition: all 0.3s ease-out; max-height: 500px; opacity: 1; overflow: hidden; }
+        .table-slide-enter-from, .table-slide-leave-to { max-height: 0; opacity: 0; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
@@ -305,79 +308,143 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                            <h3 class="font-bold text-gray-700 mb-4 border-b pb-2"><i class="fa-solid fa-shirt mr-2"></i>バリエーション構成比</h3>
-                            <div class="h-[250px] relative flex justify-center"><canvas id="variationChart"></canvas></div>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                            <h3 class="font-bold text-gray-700 mb-4 border-b pb-2"><i class="fa-solid fa-ranking-star mr-2"></i>商品構成比</h3>
-                            <div class="h-[250px] relative flex justify-center"><canvas id="productShareChart"></canvas></div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
-                            <div class="p-4 border-b bg-gray-50"><h3 class="font-bold text-gray-700"><i class="fa-solid fa-list-ol mr-2"></i>バリエーション詳細</h3></div>
-                            <div class="overflow-x-auto flex-1 max-h-[300px]">
-                                <table class="min-w-full text-sm text-left">
-                                    <thead class="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th class="px-4 py-2 w-12 text-center">#</th><th class="px-4 py-2">バリエーション名</th><th class="px-4 py-2 text-right">{{ currentMetric === 'amount' ? '金額' : '個数' }}</th><th class="px-4 py-2 w-20">比率</th></tr></thead>
-                                    <tbody class="divide-y"><tr v-for="(item, i) in variationStats" :key="i" class="hover:bg-gray-50"><td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td><td class="px-4 py-2 font-medium text-gray-800">{{ item.name || '(指定なし)' }}</td><td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td><td class="px-4 py-2">{{ item.percent }}%</td></tr><tr v-if="variationStats.length === 0"><td colspan="4" class="text-center py-4 text-gray-400">データなし</td></tr></tbody>
-                                </table>
+                            <div class="p-5 border-b">
+                                <h3 class="font-bold text-gray-700 mb-4 pb-2 border-b"><i class="fa-solid fa-shirt mr-2"></i>バリエーション構成比</h3>
+                                <div class="h-[250px] relative flex justify-center"><canvas id="variationChart"></canvas></div>
+                            </div>
+                            <div class="bg-gray-50 border-t mt-auto">
+                                <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors" @click="showStatsTables = !showStatsTables">
+                                    <span class="text-xs font-bold text-gray-500"><i class="fa-solid fa-table mr-2"></i>詳細データ (バリエーション)</span>
+                                    <i :class="`fa-solid fa-chevron-${showStatsTables ? 'up' : 'down'} text-xs text-gray-400`"></i>
+                                </div>
+                                <transition name="table-slide">
+                                    <div v-show="showStatsTables" class="overflow-x-auto max-h-[300px] border-t border-gray-200">
+                                        <table class="min-w-full text-xs text-left bg-white">
+                                            <thead class="bg-gray-50 text-gray-500 sticky top-0"><tr><th class="px-4 py-2 w-10 text-center">#</th><th class="px-4 py-2">バリエーション名</th><th class="px-4 py-2 text-right">値</th><th class="px-4 py-2 w-16">比率</th></tr></thead>
+                                            <tbody class="divide-y"><tr v-for="(item, i) in variationStats" :key="i" class="hover:bg-gray-50"><td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td><td class="px-4 py-2 font-medium text-gray-800">{{ item.name || '(指定なし)' }}</td><td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td><td class="px-4 py-2">{{ item.percent }}%</td></tr><tr v-if="variationStats.length === 0"><td colspan="4" class="text-center py-4 text-gray-400">データなし</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                </transition>
                             </div>
                         </div>
+
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
-                            <div class="p-4 border-b bg-gray-50"><h3 class="font-bold text-gray-700"><i class="fa-solid fa-list-ol mr-2"></i>商品詳細</h3></div>
-                            <div class="overflow-x-auto flex-1 max-h-[300px]">
-                                <table class="min-w-full text-sm text-left">
-                                    <thead class="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th class="px-4 py-2 w-12 text-center">#</th><th class="px-4 py-2">商品名</th><th class="px-4 py-2 text-right">{{ currentMetric === 'amount' ? '金額' : '個数' }}</th></tr></thead>
-                                    <tbody class="divide-y"><tr v-for="(item, i) in productStats" :key="i" class="hover:bg-gray-50"><td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td><td class="px-4 py-2"><div class="font-medium text-gray-800 truncate max-w-[200px]" :title="item.name">{{ item.name }}</div></td><td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td></tr><tr v-if="productStats.length === 0"><td colspan="3" class="text-center py-4 text-gray-400">データなし</td></tr></tbody>
-                                </table>
+                            <div class="p-5 border-b">
+                                <h3 class="font-bold text-gray-700 mb-4 pb-2 border-b"><i class="fa-solid fa-ranking-star mr-2"></i>商品構成比</h3>
+                                <div class="h-[250px] relative flex justify-center"><canvas id="productShareChart"></canvas></div>
+                            </div>
+                            <div class="bg-gray-50 border-t mt-auto">
+                                <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors" @click="showStatsTables = !showStatsTables">
+                                    <span class="text-xs font-bold text-gray-500"><i class="fa-solid fa-table mr-2"></i>詳細データ (商品)</span>
+                                    <i :class="`fa-solid fa-chevron-${showStatsTables ? 'up' : 'down'} text-xs text-gray-400`"></i>
+                                </div>
+                                <transition name="table-slide">
+                                    <div v-show="showStatsTables" class="overflow-x-auto max-h-[300px] border-t border-gray-200">
+                                        <table class="min-w-full text-xs text-left bg-white">
+                                            <thead class="bg-gray-50 text-gray-500 sticky top-0"><tr><th class="px-4 py-2 w-10 text-center">#</th><th class="px-4 py-2">商品名</th><th class="px-4 py-2 text-right">値</th></tr></thead>
+                                            <tbody class="divide-y"><tr v-for="(item, i) in productStats" :key="i" class="hover:bg-gray-50"><td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td><td class="px-4 py-2"><div class="font-medium text-gray-800 truncate max-w-[200px]" :title="item.name">{{ item.name }}</div></td><td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td></tr><tr v-if="productStats.length === 0"><td colspan="3" class="text-center py-4 text-gray-400">データなし</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                </transition>
                             </div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 relative">
-                            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                                <h3 class="font-bold text-gray-700"><i class="fa-solid fa-clock mr-2"></i>時間帯別 ({{ currentMetric === 'amount' ? '金額' : '個数' }})</h3>
-                                <div class="flex items-center space-x-2 text-xs">
-                                    <label class="flex items-center cursor-pointer">
-                                        <div class="relative">
-                                            <input type="checkbox" v-model="excludeBoostHourly" class="sr-only peer">
-                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="p-5 border-b relative">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-gray-700"><i class="fa-solid fa-clock mr-2"></i>時間帯別 ({{ currentMetric === 'amount' ? '金額' : '個数' }})</h3>
+                                    <div class="flex items-center space-x-2 text-xs">
+                                        <label class="flex items-center cursor-pointer">
+                                            <div class="relative">
+                                                <input type="checkbox" v-model="excludeBoostHourly" class="sr-only peer">
+                                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </div>
+                                            <span class="ml-2 font-bold text-gray-600">販売直後を除外</span>
+                                        </label>
+                                        <div v-if="excludeBoostHourly" class="flex items-center bg-gray-100 rounded px-2 py-1">
+                                            <input type="number" v-model.number="excludeDaysHourly" class="w-10 bg-transparent text-right font-mono outline-none" min="1">
+                                            <span class="ml-1 text-gray-500">日間</span>
                                         </div>
-                                        <span class="ml-2 font-bold text-gray-600">販売直後を除外</span>
-                                    </label>
-                                    <div v-if="excludeBoostHourly" class="flex items-center bg-gray-100 rounded px-2 py-1">
-                                        <input type="number" v-model.number="excludeDaysHourly" class="w-10 bg-transparent text-right font-mono outline-none" min="1">
-                                        <span class="ml-1 text-gray-500">日間</span>
                                     </div>
                                 </div>
+                                <div class="h-[250px] relative w-full">
+                                    <canvas id="hourlyChart"></canvas>
+                                </div>
                             </div>
-                            <div class="h-[250px] relative w-full">
-                                <canvas id="hourlyChart"></canvas>
+                            
+                            <div class="bg-gray-50 border-t">
+                                <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors" @click="showTimeTables = !showTimeTables">
+                                    <span class="text-xs font-bold text-gray-500"><i class="fa-solid fa-table mr-2"></i>詳細データ (時間)</span>
+                                    <i :class="`fa-solid fa-chevron-${showTimeTables ? 'up' : 'down'} text-xs text-gray-400`"></i>
+                                </div>
+                                <transition name="table-slide">
+                                    <div v-show="showTimeTables" class="overflow-x-auto max-h-[300px] border-t border-gray-200">
+                                        <table class="min-w-full text-xs text-left bg-white">
+                                            <thead class="bg-gray-50 text-gray-500 sticky top-0">
+                                                <tr><th class="px-4 py-2 w-10 text-center">#</th><th class="px-4 py-2">時間</th><th class="px-4 py-2 text-right">値</th><th class="px-4 py-2 text-right">比率</th></tr>
+                                            </thead>
+                                            <tbody class="divide-y">
+                                                <tr v-for="(item, i) in hourlyAnalysis.list" :key="item.label" class="hover:bg-gray-50">
+                                                    <td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td>
+                                                    <td class="px-4 py-2 font-mono">{{ item.label }}</td>
+                                                    <td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td>
+                                                    <td class="px-4 py-2 text-right text-gray-500">{{ item.percent }}%</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </transition>
                             </div>
                         </div>
                         
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                                <h3 class="font-bold text-gray-700"><i class="fa-solid fa-calendar-week mr-2"></i>曜日別 ({{ currentMetric === 'amount' ? '金額' : '個数' }})</h3>
-                                <div class="flex items-center space-x-2 text-xs">
-                                    <label class="flex items-center cursor-pointer">
-                                        <div class="relative">
-                                            <input type="checkbox" v-model="excludeBoostDow" class="sr-only peer">
-                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="p-5 border-b relative">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-gray-700"><i class="fa-solid fa-calendar-week mr-2"></i>曜日別 ({{ currentMetric === 'amount' ? '金額' : '個数' }})</h3>
+                                    <div class="flex items-center space-x-2 text-xs">
+                                        <label class="flex items-center cursor-pointer">
+                                            <div class="relative">
+                                                <input type="checkbox" v-model="excludeBoostDow" class="sr-only peer">
+                                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </div>
+                                            <span class="ml-2 font-bold text-gray-600">販売直後を除外</span>
+                                        </label>
+                                        <div v-if="excludeBoostDow" class="flex items-center bg-gray-100 rounded px-2 py-1">
+                                            <input type="number" v-model.number="excludeDaysDow" class="w-10 bg-transparent text-right font-mono outline-none" min="1">
+                                            <span class="ml-1 text-gray-500">日間</span>
                                         </div>
-                                        <span class="ml-2 font-bold text-gray-600">販売直後を除外</span>
-                                    </label>
-                                    <div v-if="excludeBoostDow" class="flex items-center bg-gray-100 rounded px-2 py-1">
-                                        <input type="number" v-model.number="excludeDaysDow" class="w-10 bg-transparent text-right font-mono outline-none" min="1">
-                                        <span class="ml-1 text-gray-500">日間</span>
                                     </div>
                                 </div>
+                                <div class="h-[250px] relative w-full">
+                                    <canvas id="dowChart"></canvas>
+                                </div>
                             </div>
-                            <div class="h-[250px] relative w-full">
-                                <canvas id="dowChart"></canvas>
+
+                            <div class="bg-gray-50 border-t">
+                                <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors" @click="showTimeTables = !showTimeTables">
+                                    <span class="text-xs font-bold text-gray-500"><i class="fa-solid fa-table mr-2"></i>詳細データ (曜日)</span>
+                                    <i :class="`fa-solid fa-chevron-${showTimeTables ? 'up' : 'down'} text-xs text-gray-400`"></i>
+                                </div>
+                                <transition name="table-slide">
+                                    <div v-show="showTimeTables" class="overflow-x-auto max-h-[300px] border-t border-gray-200">
+                                        <table class="min-w-full text-xs text-left bg-white">
+                                            <thead class="bg-gray-50 text-gray-500 sticky top-0">
+                                                <tr><th class="px-4 py-2 w-10 text-center">#</th><th class="px-4 py-2">曜日</th><th class="px-4 py-2 text-right">値</th><th class="px-4 py-2 text-right">比率</th></tr>
+                                            </thead>
+                                            <tbody class="divide-y">
+                                                <tr v-for="(item, i) in dowAnalysis.list" :key="item.label" class="hover:bg-gray-50">
+                                                    <td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td>
+                                                    <td class="px-4 py-2 font-bold text-gray-600">{{ item.label }}</td>
+                                                    <td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td>
+                                                    <td class="px-4 py-2 text-right text-gray-500">{{ item.percent }}%</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </transition>
                             </div>
                         </div>
                     </div>
@@ -411,10 +478,13 @@
                 const hideAmount = ref(false); 
                 const productsExpanded = ref({}); 
                 
-                // ブースト除外設定 (時間帯用)
+                // テーブル開閉状態（左右連動させるため1つのフラグに統一）
+                const showStatsTables = ref(false); // バリエーション・商品の詳細表
+                const showTimeTables = ref(false);  // 時間帯・曜日の詳細表
+
+                // ブースト除外設定
                 const excludeBoostHourly = ref(false);
                 const excludeDaysHourly = ref(14);
-                // ブースト除外設定 (曜日用)
                 const excludeBoostDow = ref(false);
                 const excludeDaysDow = ref(14);
 
@@ -476,7 +546,6 @@
                     });
                 });
 
-                // 各商品の販売開始日（一番最初の売上日）を計算
                 const productLaunchDates = computed(() => {
                     const map = {};
                     rawData.value.forEach(d => {
@@ -485,6 +554,75 @@
                         }
                     });
                     return map;
+                });
+
+                // 時間帯別の計算
+                const hourlyAnalysis = computed(() => {
+                    const data = filteredData.value;
+                    const stats = new Array(24).fill(0);
+                    let grandTotal = 0;
+
+                    data.forEach(d => {
+                        const date = new Date(d.date);
+                        const launchDate = productLaunchDates.value[d.product];
+                        let include = true;
+                        if (excludeBoostHourly.value && launchDate) {
+                            const diffTime = Math.abs(d.date - launchDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays <= excludeDaysHourly.value) include = false;
+                        }
+                        if (include) {
+                            const val = currentMetric.value === 'amount' ? d.amount : d.quantity;
+                            stats[date.getHours()] += val;
+                            grandTotal += val;
+                        }
+                    });
+
+                    const list = stats.map((val, i) => ({
+                        label: i + '時',
+                        value: val,
+                        percent: grandTotal ? Math.round((val / grandTotal) * 1000) / 10 : 0
+                    }));
+                    
+                    // リストは比率順にソートする (Requirement: "Order by descending ratio")
+                    list.sort((a, b) => b.value - a.value);
+
+                    return { stats, list };
+                });
+
+                // 曜日別の計算
+                const dowAnalysis = computed(() => {
+                    const data = filteredData.value;
+                    const stats = new Array(7).fill(0);
+                    const days = ['日','月','火','水','木','金','土'];
+                    let grandTotal = 0;
+
+                    data.forEach(d => {
+                        const date = new Date(d.date);
+                        const launchDate = productLaunchDates.value[d.product];
+                        let include = true;
+                        if (excludeBoostDow.value && launchDate) {
+                            const diffTime = Math.abs(d.date - launchDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays <= excludeDaysDow.value) include = false;
+                        }
+                        if (include) {
+                            const val = currentMetric.value === 'amount' ? d.amount : d.quantity;
+                            stats[date.getDay()] += val;
+                            grandTotal += val;
+                        }
+                    });
+
+                    const list = stats.map((val, i) => ({
+                        label: days[i],
+                        value: val,
+                        percent: grandTotal ? Math.round((val / grandTotal) * 1000) / 10 : 0
+                    }));
+
+                    // リストは比率順にソートする
+                    list.sort((a, b) => b.value - a.value);
+
+                    return { stats, list };
                 });
 
                 const toggleProduct = (product) => {
@@ -696,44 +834,17 @@
                 };
 
                 const drawTimeAnalysisCharts = () => {
-                    const data = filteredData.value;
-                    const hourly = new Array(24).fill(0); const dow = new Array(7).fill(0);
-                    
-                    data.forEach(d => {
-                        const date = new Date(d.date);
-                        const val = currentMetric.value === 'amount' ? d.amount : d.quantity;
-                        const launchDate = productLaunchDates.value[d.product];
-
-                        // 時間帯集計 (個別設定)
-                        let includeHourly = true;
-                        if (excludeBoostHourly.value && launchDate) {
-                            const diffTime = Math.abs(d.date - launchDate);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            if (diffDays <= excludeDaysHourly.value) includeHourly = false;
-                        }
-                        if (includeHourly) hourly[date.getHours()] += val;
-
-                        // 曜日集計 (個別設定)
-                        let includeDow = true;
-                        if (excludeBoostDow.value && launchDate) {
-                            const diffTime = Math.abs(d.date - launchDate);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            if (diffDays <= excludeDaysDow.value) includeDow = false;
-                        }
-                        if (includeDow) dow[date.getDay()] += val;
-                    });
-
                     const barOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${hideAmount.value ? '***' : (currentMetric.value === 'quantity' ? c.parsed.y + '個' : '¥'+c.parsed.y.toLocaleString())}` } } }, scales: { y: { beginAtZero: true, ticks: { callback: v => hideAmount.value ? '***' : (currentMetric.value === 'quantity' ? v : '¥'+v.toLocaleString()) } } } };
 
                     const hCtx = document.getElementById('hourlyChart')?.getContext('2d');
                     if(hCtx) {
                         if(chartInstances['hourly']) chartInstances['hourly'].destroy();
-                        chartInstances['hourly'] = new Chart(hCtx, { type: 'bar', data: { labels: [...Array(24).keys()].map(h=>h+'時'), datasets: [{ data: hourly, backgroundColor: '#60A5FA', borderRadius: 4 }] }, options: barOpts });
+                        chartInstances['hourly'] = new Chart(hCtx, { type: 'bar', data: { labels: [...Array(24).keys()].map(h=>h+'時'), datasets: [{ data: hourlyAnalysis.value.stats, backgroundColor: '#60A5FA', borderRadius: 4 }] }, options: barOpts });
                     }
                     const dCtx = document.getElementById('dowChart')?.getContext('2d');
                     if(dCtx) {
                         if(chartInstances['dow']) chartInstances['dow'].destroy();
-                        chartInstances['dow'] = new Chart(dCtx, { type: 'bar', data: { labels: ['日','月','火','水','木','金','土'], datasets: [{ data: dow, backgroundColor: colors.slice(0,7), borderRadius: 4 }] }, options: barOpts });
+                        chartInstances['dow'] = new Chart(dCtx, { type: 'bar', data: { labels: ['日','月','火','水','木','金','土'], datasets: [{ data: dowAnalysis.value.stats, backgroundColor: colors.slice(0,7), borderRadius: 4 }] }, options: barOpts });
                     }
                 };
 
@@ -764,7 +875,15 @@
                 watch([currentMode, currentMetric, hideAmount, excludeBoostHourly, excludeDaysHourly, excludeBoostDow, excludeDaysDow], () => updateCharts());
                 watch(isFilterOpen, () => setTimeout(updateCharts, 100));
 
-                return { currentMode, currentMetric, handleFileInput, handleDrop, isDragging, hideAmount, isAgreed, tempAgreement, confirmAgreement, products, selectedProducts, selectedVariations, toggleProduct, isProductSelected, updateChart: updateCharts, toggleAll, downloadChart, statusMessage, statusType, correctionLog, encodingMode, rawData, isFilterOpen, sortOption, formatCurrency, sortedProducts, totalStats, variationStats, productStats, insights, productsExpanded, toggleExpand, excludeBoostHourly, excludeDaysHourly, excludeBoostDow, excludeDaysDow };
+                return { 
+                    currentMode, currentMetric, handleFileInput, handleDrop, isDragging, hideAmount, isAgreed, tempAgreement, confirmAgreement, 
+                    products, selectedProducts, selectedVariations, toggleProduct, isProductSelected, updateChart: updateCharts, toggleAll, downloadChart, 
+                    statusMessage, statusType, correctionLog, encodingMode, rawData, isFilterOpen, sortOption, formatCurrency, sortedProducts, 
+                    totalStats, variationStats, productStats, insights, productsExpanded, toggleExpand, 
+                    excludeBoostHourly, excludeDaysHourly, excludeBoostDow, excludeDaysDow, 
+                    hourlyAnalysis, dowAnalysis, 
+                    showStatsTables, showTimeTables
+                };
             }
         }).mount('#app');
     </script>
