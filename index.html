@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOTH Sales Visualizer v33</title>
+    <title>BOOTH Sales Visualizer v35</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -42,7 +42,10 @@
                 </div>
                 <div class="bg-gray-50 border-l-4 border-gray-400 p-4 rounded-r">
                     <h3 class="font-bold text-gray-700 flex items-center mb-1"><i class="fa-solid fa-share-nodes mr-2"></i>SNS等での共有について</h3>
-                    <p class="text-sm text-gray-600">作成したグラフや画像のSNS共有などは、ご自身の判断で自由にお楽しみください。<br>なお、本ツールの利用や共有等により生じたトラブルに関して、製作者は責任を負いかねますので、あらかじめご了承ください。</p>
+                    <p class="text-sm text-gray-600">
+                        作成したグラフや画像のSNS共有などは、ご自身の判断で自由にお楽しみください。<br>
+                        なお、本ツールの利用や共有等により生じたトラブルに関して、製作者は責任を負いかねますので、あらかじめご了承ください。
+                    </p>
                 </div>
             </div>
             <div class="flex flex-col items-center border-t pt-6">
@@ -79,17 +82,17 @@
                         </div>
                     </div>
 
-                    <div class="hidden md:block bg-gray-50 rounded px-4 py-3 text-xs text-gray-600 border border-gray-200">
+                    <div class="hidden md:block bg-gray-50 rounded px-4 py-3 text-xs text-gray-600 border border-gray-200 max-w-lg">
                         <div class="font-bold mb-2 flex items-center">
                             <i class="fa-solid fa-circle-info mr-1 text-blue-500"></i>売上データの取得元:
                         </div>
-                        <div class="mb-2 break-all font-mono text-blue-600 bg-white p-1 rounded border border-blue-100 select-all">
-                            <a href="https://manage.booth.pm/sales/csv_requests" target="_blank" class="hover:underline">
+                        <div class="mb-2 break-all font-mono text-blue-600 bg-white p-2 rounded border border-blue-100 select-all shadow-inner text-[11px]">
+                            <a href="https://manage.booth.pm/sales/csv_requests" target="_blank" class="hover:underline flex items-center">
                                 https://manage.booth.pm/sales/csv_requests
-                                <i class="fa-solid fa-external-link-alt ml-1"></i>
+                                <i class="fa-solid fa-external-link-alt ml-2"></i>
                             </a>
                         </div>
-                        <div class="grid grid-cols-3 gap-x-4 border-t border-gray-200 pt-2">
+                        <div class="grid grid-cols-3 gap-x-2 border-t border-gray-200 pt-2 text-center">
                             <div><span class="text-[10px] text-gray-400 block font-bold">日時基準</span>注文日時</div>
                             <div><span class="text-[10px] text-gray-400 block font-bold">対象期間</span>年月指定</div>
                             <div><span class="text-[10px] text-gray-400 block font-bold">状態</span>発送完了</div>
@@ -105,13 +108,13 @@
                 </div>
             </div>
 
-            <div v-if="rawData.length === 0" class="text-center mb-10 animate-fade-in">
+            <div v-if="rawData.length === 0" class="text-center mb-10 animate-fade-in py-10">
                 <button @click="hideAmount = !hideAmount" 
-                    :class="`px-6 py-3 rounded-full text-sm font-bold transition-all shadow-sm border ${hideAmount ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`">
+                    :class="`px-8 py-4 rounded-full text-base font-bold transition-all shadow-md border ${hideAmount ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`">
                     <i :class="`fa-solid ${hideAmount ? 'fa-eye-slash' : 'fa-eye'} mr-2`"></i>
-                    {{ hideAmount ? '数値を隠す ON' : 'SNS共有用に数値を隠す' }}
+                    {{ hideAmount ? '数値を隠す ON' : '数値を隠す (SNS共有用)' }}
                 </button>
-                <p class="text-xs text-gray-400 mt-2">※オンにすると金額や個数を伏せて表示します</p>
+                <p class="text-xs text-gray-400 mt-3">※オンにすると金額や個数を伏せて表示します</p>
             </div>
 
             <div v-if="rawData.length > 0">
@@ -138,7 +141,7 @@
                         <button @click="hideAmount = !hideAmount" 
                             :class="`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center ${hideAmount ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`">
                             <i :class="`fa-solid ${hideAmount ? 'fa-eye-slash' : 'fa-eye'} mr-2`"></i>
-                            {{ hideAmount ? '数値を隠す ON' : '数値を隠す OFF' }}
+                            {{ hideAmount ? '数値を隠す ON' : '数値を隠す' }}
                         </button>
                     </div>
                 </div>
@@ -312,7 +315,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
                             <div class="p-4 border-b bg-gray-50"><h3 class="font-bold text-gray-700"><i class="fa-solid fa-list-ol mr-2"></i>バリエーション詳細</h3></div>
                             <div class="overflow-x-auto flex-1 max-h-[300px]">
@@ -329,6 +332,52 @@
                                     <thead class="bg-gray-50 text-gray-500 sticky top-0 z-10"><tr><th class="px-4 py-2 w-12 text-center">#</th><th class="px-4 py-2">商品名</th><th class="px-4 py-2 text-right">{{ currentMetric === 'amount' ? '金額' : '個数' }}</th></tr></thead>
                                     <tbody class="divide-y"><tr v-for="(item, i) in productStats" :key="i" class="hover:bg-gray-50"><td class="px-4 py-2 font-bold text-gray-400 text-center">{{ i + 1 }}</td><td class="px-4 py-2"><div class="font-medium text-gray-800 truncate max-w-[200px]" :title="item.name">{{ item.name }}</div></td><td class="px-4 py-2 text-right font-mono">{{ formatCurrency(item.value, item.value, false) }}</td></tr><tr v-if="productStats.length === 0"><td colspan="3" class="text-center py-4 text-gray-400">データなし</td></tr></tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 relative">
+                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 class="font-bold text-gray-700"><i class="fa-solid fa-clock mr-2"></i>時間帯別 ({{ currentMetric === 'amount' ? '金額' : '個数' }})</h3>
+                                <div class="flex items-center space-x-2 text-xs">
+                                    <label class="flex items-center cursor-pointer">
+                                        <div class="relative">
+                                            <input type="checkbox" v-model="excludeBoostHourly" class="sr-only peer">
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </div>
+                                        <span class="ml-2 font-bold text-gray-600">販売直後を除外</span>
+                                    </label>
+                                    <div v-if="excludeBoostHourly" class="flex items-center bg-gray-100 rounded px-2 py-1">
+                                        <input type="number" v-model.number="excludeDaysHourly" class="w-10 bg-transparent text-right font-mono outline-none" min="1">
+                                        <span class="ml-1 text-gray-500">日間</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="h-[250px] relative w-full">
+                                <canvas id="hourlyChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 class="font-bold text-gray-700"><i class="fa-solid fa-calendar-week mr-2"></i>曜日別 ({{ currentMetric === 'amount' ? '金額' : '個数' }})</h3>
+                                <div class="flex items-center space-x-2 text-xs">
+                                    <label class="flex items-center cursor-pointer">
+                                        <div class="relative">
+                                            <input type="checkbox" v-model="excludeBoostDow" class="sr-only peer">
+                                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </div>
+                                        <span class="ml-2 font-bold text-gray-600">販売直後を除外</span>
+                                    </label>
+                                    <div v-if="excludeBoostDow" class="flex items-center bg-gray-100 rounded px-2 py-1">
+                                        <input type="number" v-model.number="excludeDaysDow" class="w-10 bg-transparent text-right font-mono outline-none" min="1">
+                                        <span class="ml-1 text-gray-500">日間</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="h-[250px] relative w-full">
+                                <canvas id="dowChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -361,6 +410,13 @@
                 const isDragging = ref(false);
                 const hideAmount = ref(false); 
                 const productsExpanded = ref({}); 
+                
+                // ブースト除外設定 (時間帯用)
+                const excludeBoostHourly = ref(false);
+                const excludeDaysHourly = ref(14);
+                // ブースト除外設定 (曜日用)
+                const excludeBoostDow = ref(false);
+                const excludeDaysDow = ref(14);
 
                 const confirmAgreement = () => { isAgreed.value = true; };
                 const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#64748B'];
@@ -399,7 +455,7 @@
                             ...v,
                             key: makeVariantKey(p.name, v.name)
                         })).sort((a,b) => b.amount - a.amount);
-                        return { ...p, variations: vars }; // expandedはproductsExpandedで管理
+                        return { ...p, variations: vars }; 
                     });
 
                     list.sort((a, b) => {
@@ -418,6 +474,17 @@
                         const vKey = makeVariantKey(d.product, d.variation);
                         return selectedVariations.value.includes(vKey);
                     });
+                });
+
+                // 各商品の販売開始日（一番最初の売上日）を計算
+                const productLaunchDates = computed(() => {
+                    const map = {};
+                    rawData.value.forEach(d => {
+                        if (!map[d.product] || d.date < map[d.product]) {
+                            map[d.product] = d.date;
+                        }
+                    });
+                    return map;
                 });
 
                 const toggleProduct = (product) => {
@@ -573,10 +640,14 @@
                     updateCharts();
                 };
 
-                const updateCharts = () => { nextTick(() => { if (currentMode.value === 'graph') drawSalesChart(); else { drawStatsTrendChart(); drawStatsCharts(); } }); };
+                const updateCharts = () => { nextTick(() => { if (currentMode.value === 'graph') drawSalesChart(); else { drawStatsTrendChart(); drawStatsCharts(); drawTimeAnalysisCharts(); } }); };
 
                 const getAxis = (data) => {
-                    const dates = [...new Set(data.map(d => new Date(d.date).setHours(0,0,0,0)))].sort((a,b) => a-b);
+                    const rawDates = [...new Set(data.map(d => new Date(d.date).setHours(0,0,0,0)))].sort((a,b) => a-b);
+                    if(rawDates.length === 0) return { labels: [], timestamps: [] };
+                    const firstDate = new Date(rawDates[0]);
+                    firstDate.setDate(firstDate.getDate() - 1);
+                    const dates = [firstDate.getTime(), ...rawDates];
                     return { labels: dates.map(d => new Date(d).toLocaleDateString()), timestamps: dates };
                 };
 
@@ -598,14 +669,12 @@
                     const datasets = selectedProducts.value.map((pName, i) => {
                         const pData = filteredData.value.filter(d => d.product === pName);
                         const map = {}; pData.forEach(d => { const k = new Date(d.date).setHours(0,0,0,0); map[k] = (map[k]||0) + (currentMetric.value === 'amount' ? d.amount : d.quantity); });
-                        let acc = 0; let started = false;
-                        const data = timestamps.map(ts => { 
-                            if(map[ts]) { acc += map[ts]; started = true; }
-                            if (!started) return { x: new Date(ts).toLocaleDateString(), y: null }; 
-                            return { x: new Date(ts).toLocaleDateString(), y: acc }; 
-                        });
-                        return { label: pName, data, borderColor: colors[i % colors.length], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.1 };
-                    }).sort((a,b) => (a.data.findLast(d=>d.y!==null)?.y || 0) - (b.data.findLast(d=>d.y!==null)?.y || 0)).reverse();
+                        let acc = 0; 
+                        const rawPoints = timestamps.map(ts => { if(map[ts]) acc += map[ts]; return { x: new Date(ts).toLocaleDateString(), y: acc }; });
+                        const firstSaleIdx = rawPoints.findIndex(p => p.y > 0);
+                        if (firstSaleIdx !== -1) { for(let k=0; k < firstSaleIdx; k++) { rawPoints[k].y = null; } if (firstSaleIdx > 0) { rawPoints[firstSaleIdx - 1].y = 0; } } else { rawPoints.forEach(p => p.y = null); }
+                        return { label: pName, data: rawPoints, borderColor: colors[i % colors.length], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.1 };
+                    }).sort((a,b) => (a.data.filter(d => d.y !== null).pop()?.y || 0) - (b.data.filter(d => d.y !== null).pop()?.y || 0)).reverse();
                     chartInstances['sales'] = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: chartOpts });
                 };
 
@@ -617,15 +686,55 @@
                     const datasets = varNames.map((vName, i) => {
                         const vData = filteredData.value.filter(d => (d.variation || '(指定なし)') === vName);
                         const map = {}; vData.forEach(d => { const k = new Date(d.date).setHours(0,0,0,0); map[k] = (map[k]||0) + (currentMetric.value === 'amount' ? d.amount : d.quantity); });
-                        let acc = 0; let started = false;
-                        const data = timestamps.map(ts => { 
-                            if(map[ts]) { acc += map[ts]; started = true; }
-                            if (!started) return { x: new Date(ts).toLocaleDateString(), y: null };
-                            return { x: new Date(ts).toLocaleDateString(), y: acc }; 
-                        });
-                        return { label: vName, data, borderColor: colors[i % colors.length], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.1 };
-                    }).sort((a,b) => (a.data.findLast(d=>d.y!==null)?.y || 0) - (b.data.findLast(d=>d.y!==null)?.y || 0)).reverse();
+                        let acc = 0; 
+                        const rawPoints = timestamps.map(ts => { if(map[ts]) acc += map[ts]; return { x: new Date(ts).toLocaleDateString(), y: acc }; });
+                        const firstSaleIdx = rawPoints.findIndex(p => p.y > 0);
+                        if (firstSaleIdx !== -1) { for(let k=0; k < firstSaleIdx; k++) { rawPoints[k].y = null; } if (firstSaleIdx > 0) { rawPoints[firstSaleIdx - 1].y = 0; } } else { rawPoints.forEach(p => p.y = null); }
+                        return { label: vName, data: rawPoints, borderColor: colors[i % colors.length], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.1 };
+                    }).sort((a,b) => (a.data.filter(d => d.y !== null).pop()?.y || 0) - (b.data.filter(d => d.y !== null).pop()?.y || 0)).reverse();
                     chartInstances['statsTrend'] = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: chartOpts });
+                };
+
+                const drawTimeAnalysisCharts = () => {
+                    const data = filteredData.value;
+                    const hourly = new Array(24).fill(0); const dow = new Array(7).fill(0);
+                    
+                    data.forEach(d => {
+                        const date = new Date(d.date);
+                        const val = currentMetric.value === 'amount' ? d.amount : d.quantity;
+                        const launchDate = productLaunchDates.value[d.product];
+
+                        // 時間帯集計 (個別設定)
+                        let includeHourly = true;
+                        if (excludeBoostHourly.value && launchDate) {
+                            const diffTime = Math.abs(d.date - launchDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays <= excludeDaysHourly.value) includeHourly = false;
+                        }
+                        if (includeHourly) hourly[date.getHours()] += val;
+
+                        // 曜日集計 (個別設定)
+                        let includeDow = true;
+                        if (excludeBoostDow.value && launchDate) {
+                            const diffTime = Math.abs(d.date - launchDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays <= excludeDaysDow.value) includeDow = false;
+                        }
+                        if (includeDow) dow[date.getDay()] += val;
+                    });
+
+                    const barOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${hideAmount.value ? '***' : (currentMetric.value === 'quantity' ? c.parsed.y + '個' : '¥'+c.parsed.y.toLocaleString())}` } } }, scales: { y: { beginAtZero: true, ticks: { callback: v => hideAmount.value ? '***' : (currentMetric.value === 'quantity' ? v : '¥'+v.toLocaleString()) } } } };
+
+                    const hCtx = document.getElementById('hourlyChart')?.getContext('2d');
+                    if(hCtx) {
+                        if(chartInstances['hourly']) chartInstances['hourly'].destroy();
+                        chartInstances['hourly'] = new Chart(hCtx, { type: 'bar', data: { labels: [...Array(24).keys()].map(h=>h+'時'), datasets: [{ data: hourly, backgroundColor: '#60A5FA', borderRadius: 4 }] }, options: barOpts });
+                    }
+                    const dCtx = document.getElementById('dowChart')?.getContext('2d');
+                    if(dCtx) {
+                        if(chartInstances['dow']) chartInstances['dow'].destroy();
+                        chartInstances['dow'] = new Chart(dCtx, { type: 'bar', data: { labels: ['日','月','火','水','木','金','土'], datasets: [{ data: dow, backgroundColor: colors.slice(0,7), borderRadius: 4 }] }, options: barOpts });
+                    }
                 };
 
                 const drawStatsCharts = () => {
@@ -652,10 +761,10 @@
                     const link = document.createElement('a'); link.download = 'booth_chart.png'; link.href = nc.toDataURL('image/png'); link.click();
                 };
 
-                watch([currentMode, currentMetric, hideAmount], () => updateCharts());
+                watch([currentMode, currentMetric, hideAmount, excludeBoostHourly, excludeDaysHourly, excludeBoostDow, excludeDaysDow], () => updateCharts());
                 watch(isFilterOpen, () => setTimeout(updateCharts, 100));
 
-                return { currentMode, currentMetric, handleFileInput, handleDrop, isDragging, hideAmount, isAgreed, tempAgreement, confirmAgreement, products, selectedProducts, selectedVariations, toggleProduct, isProductSelected, updateChart: updateCharts, toggleAll, downloadChart, statusMessage, statusType, correctionLog, encodingMode, rawData, isFilterOpen, sortOption, formatCurrency, sortedProducts, totalStats, variationStats, productStats, insights, productsExpanded, toggleExpand };
+                return { currentMode, currentMetric, handleFileInput, handleDrop, isDragging, hideAmount, isAgreed, tempAgreement, confirmAgreement, products, selectedProducts, selectedVariations, toggleProduct, isProductSelected, updateChart: updateCharts, toggleAll, downloadChart, statusMessage, statusType, correctionLog, encodingMode, rawData, isFilterOpen, sortOption, formatCurrency, sortedProducts, totalStats, variationStats, productStats, insights, productsExpanded, toggleExpand, excludeBoostHourly, excludeDaysHourly, excludeBoostDow, excludeDaysDow };
             }
         }).mount('#app');
     </script>
