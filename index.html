@@ -334,6 +334,18 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
   white-space: pre-line; text-align: center;
 }
 
+/* お客さま分析 */
+.cust-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; }
+@media (max-width: 860px) { .cust-grid { grid-template-columns: 1fr; } }
+.pair-row { display: flex; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--grid); }
+.pair-row:last-child { border-bottom: none; }
+.pair-no { font-size: 12px; font-weight: 800; color: var(--muted); width: 20px; text-align: center; flex: none; }
+.pair-names { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; line-height: 1.45; }
+.pair-names .pn { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pair-names .px { display: block; color: var(--muted); font-size: 10.5px; font-weight: 700; }
+.pair-count { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; flex: none; }
+.pair-count small { font-size: 10.5px; color: var(--muted); font-weight: 600; margin-left: 1px; }
+
 /* インサイト */
 .insight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 @media (max-width: 980px) { .insight-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -486,6 +498,11 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
       </span>
       <span class="chip demo" v-if="isDemo">サンプルデータ表示中(架空のショップです)</span>
       <span class="chip">{{ dataPeriodLabel }}</span>
+      <span v-if="dupCount > 0" class="chip" :style="dedupeOn ? '' : 'color:var(--bad); border-color:var(--bad)'"
+            style="cursor:pointer" @click="dedupeOn = !dedupeOn"
+            title="同じ注文番号・商品・日時・金額の行を重複とみなします。クリックで切替">
+        {{ dedupeOn ? '重複 ' + dupCount.toLocaleString() + '件を除外中' : '⚠ 重複 ' + dupCount.toLocaleString() + '件を含めて集計中' }}
+      </span>
       <span class="chip"><button @click="resetAll" title="データをクリアして最初に戻る">✕ 読み込み直す</button></span>
       <span class="status-msg" :class="statusType" style="margin-left:auto">{{ statusMessage }}</span>
     </div>
@@ -627,8 +644,12 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
     <section class="section">
       <div class="section-head">
         <h2>累積売上の推移</h2>
-        <span class="sub">商品ごとの積み上がりかた(上位{{ topProductCount }}商品+その他)</span>
+        <span class="sub">{{ cumulativeMode === 'product' ? '商品ごとの積み上がりかた(上位' + topProductCount + '商品+その他)' : 'バリエーションごとの積み上がりかた(上位7+その他)' }}</span>
         <span class="tail">
+          <span class="seg">
+            <button :class="{ on: cumulativeMode === 'product' }" @click="cumulativeMode = 'product'">商品別</button>
+            <button :class="{ on: cumulativeMode === 'variation' }" @click="cumulativeMode = 'variation'">バリエーション別</button>
+          </span>
           <button class="btn" style="padding:5px 12px; font-size:12px" @click="downloadChart('cumulativeChart', 'booth_cumulative')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
             画像保存
@@ -673,6 +694,27 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
           </div>
         </div>
         <p v-if="rankedProducts.length === 0" style="color:var(--muted); font-size:13px; text-align:center; padding:20px 0">表示できる商品がありません(フィルタを確認してください)</p>
+      </div>
+    </section>
+
+    <!-- ローンチカーブ -->
+    <section class="section">
+      <div class="section-head">
+        <h2>ローンチカーブ比較</h2>
+        <span class="sub">発売からの日数で累積を重ねて、初速とロングセラー度を比較(上位{{ topProductCount }}商品・期間フィルタの影響は受けません)</span>
+        <span class="tail">
+          <span class="seg">
+            <button v-for="n in [30, 90, 180]" :key="n" :class="{ on: launchWindow === n }" @click="launchWindow = n">{{ n }}日</button>
+          </span>
+          <button class="btn" style="padding:5px 12px; font-size:12px" @click="downloadChart('launchChart', 'booth_launch')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            画像保存
+          </button>
+        </span>
+      </div>
+      <div class="card">
+        <div class="chart-box h-360"><canvas id="launchChart"></canvas></div>
+        <p style="font-size:11.5px; color:var(--muted); margin-top:10px">※データ内で最初に売れた日を「発売日」とみなします。データ開始前から販売中の商品は正しいカーブになりません。</p>
       </div>
     </section>
 
@@ -721,6 +763,39 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- お客さま分析 -->
+    <section class="section">
+      <div class="section-head">
+        <h2>お客さま分析</h2>
+        <span class="sub">ファンが育っているか、どの商品が一緒に買われているか</span>
+        <span class="tail">
+          <button class="btn" style="padding:5px 12px; font-size:12px" @click="downloadChart('customerChart', 'booth_customers')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            画像保存
+          </button>
+        </span>
+      </div>
+      <div class="cust-grid">
+        <div class="card">
+          <h3 style="font-size:13.5px; font-weight:700; margin-bottom:10px">新規とリピーターの月別内訳</h3>
+          <div class="chart-box h-300"><canvas id="customerChart"></canvas></div>
+          <p style="font-size:11.5px; color:var(--muted); margin-top:8px">※過去に一度でも購入があった方の注文を「リピーター」として集計。ユーザー識別コードのない注文は新規扱いです。</p>
+        </div>
+        <div class="card">
+          <h3 style="font-size:13.5px; font-weight:700; margin-bottom:6px">よく一緒に買われる組み合わせ</h3>
+          <p style="font-size:11.5px; color:var(--muted); margin-bottom:8px">同じ注文に入っていた商品ペアのトップ10。セット販売やおまとめ割の企画に</p>
+          <div v-if="productPairs.length">
+            <div v-for="(p, i) in productPairs" :key="i" class="pair-row">
+              <span class="pair-no">{{ i + 1 }}</span>
+              <span class="pair-names"><span class="pn">{{ p.a }}</span><span class="px">×</span><span class="pn">{{ p.b }}</span></span>
+              <span class="pair-count">{{ maskOn ? '×××' : p.count.toLocaleString() }}<small>回</small></span>
+            </div>
+          </div>
+          <p v-else style="font-size:12.5px; color:var(--muted); padding:16px 0; text-align:center">複数の商品が同時に買われた注文がまだありません</p>
         </div>
       </div>
     </section>
@@ -819,7 +894,8 @@ const TOP_PRODUCT_SLOTS = 7; // 8色目は「その他」用に取っておく
 createApp({
   setup() {
     /* ---------- 状態 ---------- */
-    const rawData = ref([]);          // {date, product, variation, amount, quantity, userCode}
+    const loadedRows = ref([]);       // パース済みの全行(重複含む) {date, product, variation, amount, quantity, userCode, orderId}
+    const dedupeOn = ref(true);       // 同じファイルや全結合CSVを重ねてD&Dしたときの重複行を除外する
     const fileCount = ref(0);
     const isDemo = ref(false);
     const statusMessage = ref('');
@@ -853,6 +929,8 @@ createApp({
 
     const excludeBoost = ref(false);
     const excludeDays = ref(14);
+    const cumulativeMode = ref('product');  // 累積グラフ: 'product' | 'variation'
+    const launchWindow = ref(90);           // ローンチカーブの表示日数
 
     const showMonthlyTable = ref(false);
     const showTimeTable = ref(false);
@@ -873,6 +951,19 @@ createApp({
     };
     watch(effectiveDark, () => { applyTheme(); redrawCharts(); });
     applyTheme();
+
+    /* ---------- 重複除外 ---------- */
+    const dupInfo = computed(() => {
+      const seen = new Set(); const rows = []; let dup = 0;
+      loadedRows.value.forEach(d => {
+        const key = d.orderId + '|' + d.product + '|' + (d.variation || '') + '|' + d.amount + '|' + d.quantity + '|' + d.date;
+        if (seen.has(key)) { dup++; if (!dedupeOn.value) rows.push(d); }
+        else { seen.add(key); rows.push(d); }
+      });
+      return { rows, dup };
+    });
+    const rawData = computed(() => dupInfo.value.rows);
+    const dupCount = computed(() => dupInfo.value.dup);
 
     /* ---------- 基本 ---------- */
     const hasData = computed(() => rawData.value.length > 0);
@@ -926,6 +1017,19 @@ createApp({
     });
     const launchDates = computed(() => {
       const m = {}; productMeta.value.forEach(p => { m[p.name] = p.firstDate; }); return m;
+    });
+    // バリエーション単位のメタ(累積グラフのバリエーション別モード用。色は全体順位で固定)
+    const variationMeta = computed(() => {
+      const map = {};
+      rawData.value.forEach(d => {
+        const vn = d.variation || '(指定なし)';
+        const key = d.product + '___' + vn;
+        if (!map[key]) map[key] = { key, product: d.product, name: vn, total: 0 };
+        map[key].total += d.amount;
+      });
+      const list = Object.values(map).sort((a, b) => b.total - a.total);
+      list.forEach((v, i) => { v.slot = i < TOP_PRODUCT_SLOTS ? i : -1; });
+      return list;
     });
 
     const searchedProducts = computed(() => {
@@ -1171,6 +1275,70 @@ createApp({
       return DOW_NAMES[d] + '曜 ' + h + '時台\n' + val + ' (' + pct + '%)';
     };
 
+    /* ---------- お客さま分析 ---------- */
+    // 商品・バリエーション選択は反映しつつ、リピーター判定は読込データ全体で行う
+    const selectedRows = computed(() => {
+      const prodSet = new Set(selectedProducts.value);
+      const varSet = new Set(selectedVariations.value);
+      return rawData.value.filter(d =>
+        prodSet.has(d.product) && varSet.has(d.product + '___' + (d.variation || '(指定なし)')));
+    });
+    const customerMonthly = computed(() => {
+      if (!hasData.value || filteredData.value.length === 0) return [];
+      const rows = selectedRows.value;
+      // 注文ごとの代表日時とユーザー
+      const orders = {};
+      rows.forEach(d => {
+        const o = orders[d.orderId] || (orders[d.orderId] = { ts: d.date, user: d.userCode });
+        if (d.date < o.ts) o.ts = d.date;
+        if (!o.user && d.userCode) o.user = d.userCode;
+      });
+      // ユーザーごとの初回注文日時
+      const firstTs = {};
+      Object.values(orders).forEach(o => {
+        if (!o.user) return;
+        if (!(o.user in firstTs) || o.ts < firstTs[o.user]) firstTs[o.user] = o.ts;
+      });
+      const isRepeatOrder = id => {
+        const o = orders[id];
+        return !!(o && o.user && o.ts > firstTs[o.user]);
+      };
+      // 期間フィルタ内の月ごとに新規/リピーターへ振り分け
+      const w = rangeWindow.value;
+      const map = {};
+      rows.forEach(d => {
+        if (d.date < w.from || d.date > w.to) return;
+        const ym = ymOf(d.date);
+        if (!map[ym]) map[ym] = { newVal: 0, repVal: 0 };
+        const v = metricOf(d);
+        if (isRepeatOrder(d.orderId)) map[ym].repVal += v; else map[ym].newVal += v;
+      });
+      return monthlyRows.value.map(m => {
+        const rec = map[m.ym] || { newVal: 0, repVal: 0 };
+        const total = rec.newVal + rec.repVal;
+        return { ym: m.ym, label: m.label, ...rec, repShare: total ? rec.repVal / total * 100 : 0 };
+      });
+    });
+    const productPairs = computed(() => {
+      const orderProds = {};
+      filteredData.value.forEach(d => {
+        (orderProds[d.orderId] = orderProds[d.orderId] || new Set()).add(d.product);
+      });
+      const counts = {};
+      Object.values(orderProds).forEach(set => {
+        if (set.size < 2) return;
+        const arr = [...set].sort();
+        for (let i = 0; i < arr.length; i++) {
+          for (let j = i + 1; j < arr.length; j++) {
+            const k = arr[i] + '|||' + arr[j];
+            counts[k] = (counts[k] || 0) + 1;
+          }
+        }
+      });
+      return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10)
+        .map(([k, count]) => { const [a, b] = k.split('|||'); return { a, b, count }; });
+    });
+
     /* ---------- インサイト ---------- */
     const insights = computed(() => {
       const data = filteredData.value;
@@ -1280,15 +1448,35 @@ createApp({
       // 日付軸(フィルタ期間内の全日)
       const dayKeys = [...new Set(data.map(d => new Date(d.date).setHours(0, 0, 0, 0)))].sort((a, b) => a - b);
       if (!dayKeys.length) { return; }
-      // グループ: 上位7商品 + その他
+      const trunc = (s, n) => s.length > n ? s.slice(0, n) + '…' : s;
+      // グループ: 上位7(商品 or バリエーション) + その他
       const groups = [];
-      const otherNames = new Set();
-      productMeta.value.forEach(p => {
-        if (!selectedProducts.value.includes(p.name)) return;
-        if (p.slot >= 0) groups.push({ label: p.name, names: new Set([p.name]), color: pal.value.cat[p.slot] });
-        else otherNames.add(p.name);
-      });
-      if (otherNames.size) groups.push({ label: 'その他 (' + otherNames.size + '商品)', names: otherNames, color: pal.value.other });
+      if (cumulativeMode.value === 'product') {
+        const otherNames = new Set();
+        productMeta.value.forEach(p => {
+          if (!selectedProducts.value.includes(p.name)) return;
+          if (p.slot >= 0) groups.push({ label: p.name, match: d => d.product === p.name, color: pal.value.cat[p.slot] });
+          else otherNames.add(p.name);
+        });
+        if (otherNames.size) groups.push({ label: 'その他 (' + otherNames.size + '商品)', match: d => otherNames.has(d.product), color: pal.value.other });
+      } else {
+        const prodSel = new Set(selectedProducts.value);
+        const varSel = new Set(selectedVariations.value);
+        const slotted = variationMeta.value.filter(v => v.slot >= 0 && prodSel.has(v.product) && varSel.has(v.key));
+        const nameCount = {};
+        slotted.forEach(v => { nameCount[v.name] = (nameCount[v.name] || 0) + 1; });
+        const otherKeys = new Set();
+        variationMeta.value.forEach(v => {
+          if (!prodSel.has(v.product) || !varSel.has(v.key)) return;
+          if (v.slot >= 0) {
+            // 同名バリエーションが複数商品にあるときや(指定なし)は商品名で補う
+            const label = v.name === '(指定なし)' ? trunc(v.product, 20)
+              : nameCount[v.name] > 1 ? v.name + '(' + trunc(v.product, 12) + ')' : v.name;
+            groups.push({ label, match: d => d.product + '___' + (d.variation || '(指定なし)') === v.key, color: pal.value.cat[v.slot] });
+          } else otherKeys.add(v.key);
+        });
+        if (otherKeys.size) groups.push({ label: 'その他 (' + otherKeys.size + ')', match: d => otherKeys.has(d.product + '___' + (d.variation || '(指定なし)')), color: pal.value.other });
+      }
 
       const labels = dayKeys.map(ts => {
         const d = new Date(ts);
@@ -1298,7 +1486,7 @@ createApp({
       const datasets = groups.map(g => {
         const daily = new Array(dayKeys.length).fill(0);
         data.forEach(d => {
-          if (!g.names.has(d.product)) return;
+          if (!g.match(d)) return;
           daily[dayIndex.get(new Date(d.date).setHours(0, 0, 0, 0))] += metricOf(d);
         });
         let acc = 0; let started = false;
@@ -1351,12 +1539,114 @@ createApp({
       });
     };
 
+    // ローンチカーブ: 発売日からの経過日数で累積を比較(上位7商品・期間フィルタ非適用)
+    const drawLaunchChart = () => {
+      const el = document.getElementById('launchChart');
+      if (!el) return;
+      if (chartInstances.launch) chartInstances.launch.destroy();
+      const N = launchWindow.value;
+      const DAY = 86400000;
+      const prodSel = new Set(selectedProducts.value);
+      const varSel = new Set(selectedVariations.value);
+      const targets = productMeta.value.filter(p => p.slot >= 0 && prodSel.has(p.name));
+      const labels = Array.from({ length: N + 1 }, (_, i) => i === 0 ? '発売日' : i + '日目');
+      const maxTs = dataBounds.value ? dataBounds.value.max : 0;
+      const datasets = targets.map(p => {
+        const daily = new Array(N + 1).fill(0);
+        rawData.value.forEach(d => {
+          if (d.product !== p.name) return;
+          if (!varSel.has(d.product + '___' + (d.variation || '(指定なし)'))) return;
+          const off = Math.floor((d.date - p.firstDate) / DAY);
+          if (off >= 0 && off <= N) daily[off] += metricOf(d);
+        });
+        // データ末尾より先(まだ観測できていない日)はnullで打ち切る
+        const observable = Math.floor((maxTs - p.firstDate) / DAY);
+        let acc = 0;
+        const points = daily.map((v, i) => { if (i > observable) return null; acc += v; return acc; });
+        return {
+          label: p.name, data: points,
+          borderColor: pal.value.cat[p.slot], backgroundColor: pal.value.cat[p.slot],
+          borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, pointHoverBorderColor: pal.value.surface, pointHoverBorderWidth: 2,
+          tension: 0.1, spanGaps: false,
+        };
+      });
+      chartInstances.launch = new Chart(el.getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { color: pal.value.ink2, usePointStyle: true, pointStyle: 'line', boxWidth: 18, font: { size: 11 } } },
+            tooltip: {
+              ...tooltipBase(),
+              itemSort: (a, b) => (b.parsed.y || 0) - (a.parsed.y || 0),
+              callbacks: {
+                label: c => ' ' + c.dataset.label + ': ' + (maskOn.value ? '×××' : (metric.value === 'amount' ? fmtYen(c.parsed.y) : c.parsed.y.toLocaleString('ja-JP') + '個')),
+              },
+            },
+          },
+          scales: {
+            ...baseScales(),
+            x: { ...baseScales().x, ticks: { ...baseScales().x.ticks, maxTicksLimit: 10 } },
+          },
+        },
+      });
+    };
+
+    // 新規vsリピーターの月別積み上げ
+    const drawCustomerChart = () => {
+      const el = document.getElementById('customerChart');
+      if (!el) return;
+      if (chartInstances.customer) chartInstances.customer.destroy();
+      const rows = customerMonthly.value;
+      const seg = (label, key, color) => ({
+        label, data: rows.map(r => r[key]),
+        backgroundColor: color, maxBarThickness: 24, categoryPercentage: 0.72,
+        borderColor: pal.value.surface, borderWidth: 1, // 積み上げ境界のサーフェスギャップ
+      });
+      chartInstances.customer = new Chart(el.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: rows.map(r => r.ym),
+          datasets: [
+            seg('新規のお客さま', 'newVal', pal.value.cat[0]),
+            seg('リピーター', 'repVal', pal.value.cat[1]),
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: pal.value.ink2, boxWidth: 12, boxHeight: 12, font: { size: 11 } } },
+            tooltip: {
+              ...tooltipBase(),
+              callbacks: {
+                title: items => ymLabel(items[0].label),
+                label: c => {
+                  const r = rows[c.dataIndex];
+                  const v = c.dataset.label.includes('リピーター') ? r.repVal : r.newVal;
+                  return ' ' + c.dataset.label + ': ' + maskedMetric(v);
+                },
+                footer: items => 'リピーター比率: ' + rows[items[0].dataIndex].repShare.toFixed(1) + '%',
+              },
+            },
+          },
+          scales: {
+            x: { ...baseScales().x, stacked: true },
+            y: { ...baseScales().y, stacked: true },
+          },
+        },
+      });
+    };
+
     const redrawCharts = () => {
       if (!hasData.value) return;
-      nextTick(() => { drawMonthlyChart(); drawCumulativeChart(); });
+      nextTick(() => { drawMonthlyChart(); drawCumulativeChart(); drawLaunchChart(); drawCustomerChart(); });
     };
     watch([filteredData, metric, maskOn], redrawCharts);
     watch(hasData, v => { if (v) redrawCharts(); });
+    watch(cumulativeMode, () => nextTick(drawCumulativeChart));
+    watch(launchWindow, () => nextTick(drawLaunchChart));
 
     const downloadChart = (id, name) => {
       const c = document.getElementById(id);
@@ -1456,7 +1746,8 @@ createApp({
         if (all.length > 0) {
           isDemo.value = false;
           setData(all, okFiles);
-          statusMessage.value = all.length.toLocaleString() + '件のデータを読み込みました';
+          statusMessage.value = rawData.value.length.toLocaleString() + '件のデータを読み込みました';
+          if (dupCount.value > 0) statusMessage.value += '(重複 ' + dupCount.value.toLocaleString() + ' 件を除外)';
           statusType.value = 'info';
         } else {
           statusMessage.value = '有効なデータが見つかりませんでした。BOOTHの「売上管理CSV」かご確認ください';
@@ -1466,7 +1757,7 @@ createApp({
     };
 
     const setData = (data, files) => {
-      rawData.value = data;
+      loadedRows.value = data;
       fileCount.value = files;
       toggleAllProducts(true);
       showMonthlyTable.value = false; showTimeTable.value = false;
@@ -1478,7 +1769,7 @@ createApp({
     const onFileInput = e => { processFiles(e.target.files); e.target.value = ''; };
     const onDrop = e => processFiles(e.dataTransfer.files);
     const resetAll = () => {
-      rawData.value = []; fileCount.value = 0; isDemo.value = false;
+      loadedRows.value = []; fileCount.value = 0; isDemo.value = false;
       statusMessage.value = ''; selectedProducts.value = []; selectedVariations.value = [];
       Object.values(chartInstances).forEach(c => c && c.destroy());
     };
@@ -1560,6 +1851,7 @@ createApp({
 
     return {
       rawData, fileCount, isDemo, hasData, statusMessage, statusType, isDragging, fileInput,
+      dedupeOn, dupCount, cumulativeMode, launchWindow, customerMonthly, productPairs,
       metric, metricLabel, maskOn, theme, effectiveDark, themeLabel, cycleTheme,
       rangePreset, customFrom, customTo, availableYears, rangeLabel, dataPeriodLabel,
       selectedProducts, selectedVariations, prodPanelOpen, productSearch, expanded, expandedRank,
